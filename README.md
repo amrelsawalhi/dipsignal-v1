@@ -2,7 +2,10 @@
 
 **Multi-Asset Financial Data Pipeline with AI-Powered Analytics**
 
+
 DipSignal is a fully automated data engineering pipeline that collects, transforms, and analyzes market data across 61 assets (crypto, stocks, commodities). It generates daily AI-powered technical analysis and weekly portfolio recommendations for three risk profiles using Google Gemini AI.
+
+[**🚀 Live Dashboard**](https://dipsignal.vercel.app/)
 
 ---
 
