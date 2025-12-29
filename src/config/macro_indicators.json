@@ -1,0 +1,7 @@
+{
+    "cpi": "CPIAUCSL",
+    "interest_rate": "FEDFUNDS",
+    "sp500": "SP500",
+    "unemployment_rate": "UNRATE",
+    "gdp": "GDP"
+}

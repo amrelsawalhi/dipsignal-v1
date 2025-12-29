@@ -1,0 +1,17 @@
+altair
+beautifulsoup4
+feedparser
+fredapi
+google-generativeai
+networkx
+pandas
+pandas-market-calendars
+pandas_ta
+plotly
+polars
+psycopg2-binary
+python-dotenv
+requests
+sqlalchemy
+streamlit
+yfinance

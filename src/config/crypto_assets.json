@@ -1,0 +1,26 @@
+{
+    "BTCUSDT": {
+        "symbol": "BTC",
+        "coingecko_id": "bitcoin"
+    },
+    "ETHUSDT": {
+        "symbol": "ETH",
+        "coingecko_id": "ethereum"
+    },
+    "BNBUSDT": {
+        "symbol": "BNB",
+        "coingecko_id": "binancecoin"
+    },
+    "SOLUSDT": {
+        "symbol": "SOL",
+        "coingecko_id": "solana"
+    },
+    "XRPUSDT": {
+        "symbol": "XRP",
+        "coingecko_id": "ripple"
+    },
+    "ADAUSDT": {
+        "symbol": "ADA",
+        "coingecko_id": "cardano"
+    }
+}

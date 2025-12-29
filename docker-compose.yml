@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: dipsignal_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dipsignal
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db_schema:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+
+  streamlit:
+    build: .
+    container_name: dipsignal_admin
+    command: streamlit run Admin_Panel.py
+    volumes:
+      - .:/app
+    ports:
+      - "8501:8501"
+    environment:
+      # Remove this line to use DATABASE_URL from .env (external DB)
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/dipsignal
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  dagster_daemon:
+    build: .
+    container_name: dipsignal_daemon
+    command: dagster-daemon run
+    volumes:
+      - .:/app
+    environment:
+      # Remove this line to use DATABASE_URL from .env (external DB)
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/dipsignal
+      - DAGSTER_HOME=/app
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  dagster_webserver:
+    build: .
+    container_name: dipsignal_dagster_ui
+    command: dagster-webserver -h 0.0.0.0 -p 3000
+    volumes:
+      - .:/app
+    ports:
+      - "3000:3000"
+    environment:
+      # Remove this line to use DATABASE_URL from .env (external DB)
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/dipsignal
+      - DAGSTER_HOME=/app
+      - PYTHONUNBUFFERED=1
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
