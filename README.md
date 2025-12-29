@@ -672,7 +672,6 @@ Full tech stack defined in `requirements.txt`:
 
 ## Deployment & Future Roadmap
 
-- **Containerization (Docker):** Planned for Phase 2 to standardize the execution environment (Postgres + Dagster Daemon + Streamlit) and simplify dependency management for production deployment.
 - **Manual Schedules:** Dagster schedules are defined but require `dagster dev` or `dagster daemon` to be running continuously. For production, use systemd (Linux) or Task Scheduler (Windows) to auto-start the daemon.
 - **API Key Security:** `.env` file is gitignored. For team environments, use secret managers (AWS Secrets Manager, Azure Key Vault) instead of local `.env`.
 - **Test Coverage:** Current coverage is ~60% . Core DB layer and collectors have full coverage; AI generators are partially mocked due to API cost constraints and no tests for admin panel.
