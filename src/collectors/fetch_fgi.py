@@ -5,7 +5,7 @@ from sqlalchemy import MetaData, Table, Column, Integer, String, Date
 from sqlalchemy.dialects.postgresql import insert
 from src.core.logger_manager import get_logger
 
-log = get_logger("FGI")
+log = get_logger("CRYPTO-FGI")
 
 def fetch_fgi(url='https://api.alternative.me/fng/?limit=100', timeout=10):
     response = requests.get(url, timeout=timeout)

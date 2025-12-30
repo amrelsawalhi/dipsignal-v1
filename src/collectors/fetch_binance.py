@@ -75,7 +75,7 @@ def fetch_ohlcv_binance(symbol: str, interval="1d", limit=250):
     return df[["timestamp", "symbol", "open", "high", "low", "close", "volume"]]
 
 def fetch_market_cap_coingecko(coingecko_id: str, symbol: str) -> float:
-    """Fetch current market cap from CoinGecko API (free, no API key needed)"""
+    """Fetch current market cap from CoinGecko API with exponential backoff retry logic"""
     if not coingecko_id:
         log.warning(f"No CoinGecko ID provided for {symbol}")
         return None
@@ -90,15 +90,33 @@ def fetch_market_cap_coingecko(coingecko_id: str, symbol: str) -> float:
         'sparkline': 'false'
     }
     
-    try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        market_cap = data.get('market_data', {}).get('market_cap', {}).get('usd')
-        return market_cap
-    except Exception as e:
-        log.warning(f"Failed to fetch market cap for {symbol}: {e}")
-        return None
+    max_retries = 5
+    base_delay = 5  # Start with 5 seconds
+    
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            market_cap = data.get('market_data', {}).get('market_cap', {}).get('usd')
+            return market_cap
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:  # Rate limit error
+                if attempt < max_retries - 1:
+                    delay = base_delay * (2 ** attempt)  # Exponential backoff: 5s, 10s, 20s, 40s, 80s
+                    log.warning(f"Rate limited for {symbol}. Retrying in {delay}s... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(delay)
+                else:
+                    log.error(f"Failed to fetch market cap for {symbol} after {max_retries} attempts: Rate limit exceeded")
+                    return None
+            else:
+                log.warning(f"HTTP error for {symbol}: {e}")
+                return None
+        except Exception as e:
+            log.warning(f"Failed to fetch market cap for {symbol}: {e}")
+            return None
+    
+    return None
 
 
 def calculate_indicators(df: pd.DataFrame, market_cap: float = None) -> pd.DataFrame:
@@ -186,8 +204,8 @@ def main():
         if market_cap:
             log.info(f"{symbol} market cap: ${market_cap:,.0f}")
         
-        # Small delay to avoid CoinGecko rate limits
-        time.sleep(2)
+        # Delay to avoid CoinGecko rate limits (free tier: ~10 calls/min)
+        time.sleep(6)
         
         # Daily incremental fetch (last 200 days)
         df = fetch_ohlcv_binance(symbol=binance_pair, interval=interval, limit=200)

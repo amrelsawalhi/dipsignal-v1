@@ -28,16 +28,16 @@ weekly_portfolio_job = define_asset_job(
     selection=["weekly_portfolio_recommendation"]
 )
 
-# Daily schedule (2:15 AM every day)
+# Daily schedule (0:15 AM every day)
 daily_pipeline_schedule = ScheduleDefinition(
     job=daily_pipeline_job,
-    cron_schedule="15 2 * * *",  # 2:15 AM every day
-    description="Run daily pipeline at 2:15 AM (UTC+2)",
+    cron_schedule="15 0 * * *",  # 0:15 AM every day
+    description="Run daily pipeline at 0:15 AM (UTC+2)",
 )
 
-# Weekly schedule (4:15 AM every Monday - 2 hours after daily pipeline)
+# Weekly schedule (2:15 AM every Monday - 2 hours after daily pipeline)
 weekly_portfolio_schedule = ScheduleDefinition(
     job=weekly_portfolio_job,
-    cron_schedule="15 4 * * 1",  # 4:15 AM on Mondays (1 = Monday)
-    description="Generate weekly portfolio recommendations on Mondays at 4:15 AM",
+    cron_schedule="15 2 * * 1",  # 2:15 AM on Mondays (1 = Monday)
+    description="Generate weekly portfolio recommendations on Mondays at 2:15 AM",
 )
