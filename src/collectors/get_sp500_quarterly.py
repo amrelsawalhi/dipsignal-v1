@@ -19,13 +19,13 @@ def fetch_and_store_sp500():
 
     table = pd.read_html(io.StringIO(response.text))[0]
     
-    # Transformation
+
     records = []
     for _, row in table.iterrows():
         # Fix symbol format (BRK.B -> BRK-B)
         symbol = row['Symbol'].replace('.', '-')
         
-        # Build Metadata
+
         metadata = {
             "gics_sector": row.get('GICS Sector'),
             "gics_sub_industry": row.get('GICS Sub-Industry'),
@@ -44,7 +44,7 @@ def fetch_and_store_sp500():
         
     log.info(f"Processed {len(records)} equity assets.")
     
-    # Database Insertion
+
     engine = DBManager.get_engine()
     metadata = MetaData()
     try:
@@ -54,7 +54,6 @@ def fetch_and_store_sp500():
         return
 
     stmt = insert(dim_assets).values(records)
-    # Upsert: Update metadata and name if symbol exists
     stmt = stmt.on_conflict_do_update(
         index_elements=['symbol'],
         set_={

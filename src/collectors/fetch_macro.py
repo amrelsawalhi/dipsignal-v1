@@ -14,8 +14,8 @@ def fetch_macro_data(start_date="2018-02-1", end_date=None):
     FRED_API_KEY = os.getenv("FRED_API_KEY")
     fred = Fred(api_key=FRED_API_KEY)
 
-    # FRED series
-    # Load FRED series config
+
+
     CONFIG_PATH = os.path.join(os.path.dirname(__file__), '../config/macro_indicators.json')
     try:
         with open(CONFIG_PATH, 'r') as f:
@@ -40,7 +40,7 @@ def fetch_macro_data(start_date="2018-02-1", end_date=None):
 
     fred_df = pd.concat(df_list, axis=1)
 
-    # Fetch DXY, VIX, and 10Y Treasury from Yahoo Finance
+
     try:
         log.info("Fetching DXY...")
         dxy_data = yf.download("DX-Y.NYB", start=start_date, end=end_date, interval="1d", auto_adjust=False, progress=False)
@@ -83,20 +83,20 @@ def fetch_macro_data(start_date="2018-02-1", end_date=None):
         log.error(f"Failed to fetch 10Y Treasury: {e}")
         treasury_10y = pd.Series(dtype=float, name="treasury_10y")
 
-    # Merge all data
+
     macro_df = pd.concat([fred_df, dxy, vix, treasury_10y], axis=1)
     full_index = pd.date_range(start=macro_df.index.min(), end=macro_df.index.max(), freq="D")
     macro_df = macro_df.reindex(full_index)
     macro_df.index.name = "date"
 
-    # Detect missing data before fill - only check columns that exist
+
     check_cols = [col for col in ["cpi", "interest_rate", "sp500", "dxy", "vix", "treasury_10y"] if col in macro_df.columns]
     macro_df["market_closed"] = macro_df[check_cols].isna().all(axis=1)
 
-    # Forward fill and round
+
     macro_df = macro_df.ffill().round(2).reset_index()
 
-    # Select and reorder columns - only include columns that exist
+
     available_cols = ["date"]
     for col in ["dxy", "sp500", "cpi", "interest_rate", "vix", "treasury_10y", "unemployment_rate", "gdp"]:
         if col in macro_df.columns:
@@ -111,14 +111,12 @@ def main():
     engine = DBManager.get_engine()
     
     try:
-        # Direct SQLAlchemy approach for robust conflict handling
+
         metadata = MetaData()
         table = Table('fact_macro_indicators', metadata, autoload_with=engine, schema='dipsignal')
         
-        # Convert DF to list of dicts
-        # IMPORTANT: Convert numpy types to native Python types via JSON cycle or manual casting
-        # Pandas to_dict('records') keeps numpy types usually, which usually works for simple types,
-        # but safely ensuring native types prevents issues.
+
+
         records = df_new.to_dict(orient='records')
         
         stmt = insert(table).values(records)

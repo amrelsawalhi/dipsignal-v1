@@ -1,6 +1,4 @@
-"""
-Generate AI-powered analysis for all assets using Gemini
-"""
+
 import os
 import json
 import time
@@ -16,7 +14,7 @@ from src.core.logger_manager import get_logger
 load_dotenv()
 log = get_logger("ASSET_ANALYSIS")
 
-# Configure Gemini
+
 api_key = os.getenv("GEMINI_API_KEY")
 if api_key:
     client = genai.Client(api_key=api_key)
@@ -25,7 +23,7 @@ else:
     exit(1)
 
 def get_macro_summary():
-    """Get the latest macro summary"""
+
     engine = DBManager.get_engine()
     query = text("""
         SELECT summary_text 
@@ -38,7 +36,7 @@ def get_macro_summary():
         return result[0] if result else None
 
 def get_all_assets():
-    """Get all assets from dim_assets"""
+
     engine = DBManager.get_engine()
     query = text("""
         SELECT asset_id, symbol, asset_class
@@ -51,10 +49,10 @@ def get_all_assets():
         return df
 
 def get_asset_data(symbol, asset_class):
-    """Get 200 days of price data and 5 recent news for an asset"""
+
     engine = DBManager.get_engine()
     
-    # Get 200 days of price data
+
     price_query = text("""
         SELECT 
             f.timestamp::date as date,
@@ -67,7 +65,7 @@ def get_asset_data(symbol, asset_class):
         LIMIT 200
     """)
     
-    # Get 5 recent news - filter based on asset class
+
     if asset_class == 'CRYPTO':
         news_query = text("""
             SELECT title, date
@@ -94,7 +92,7 @@ def get_asset_data(symbol, asset_class):
     return price_df, news_df
 
 def check_existing_analysis(asset_id):
-    """Check if analysis already exists for this asset today"""
+
     engine = DBManager.get_engine()
     
     query = text("""
@@ -110,7 +108,7 @@ def check_existing_analysis(asset_id):
         return result is not None
 
 def clean_ai_response(text):
-    """Remove unwanted artifacts from AI response"""
+
     if not text:
         return text
     
@@ -121,7 +119,7 @@ def clean_ai_response(text):
     return '\n'.join(cleaned_lines).strip()
 
 def parse_json_response(text):
-    """Parse JSON from AI response, handling markdown code blocks"""
+
     try:
         # Remove markdown code blocks if present
         text = text.strip()
@@ -138,9 +136,9 @@ def parse_json_response(text):
         return None
 
 def generate_asset_analysis(symbol, asset_class, macro_summary, price_df, news_df, retry=False):
-    """Generate AI analysis for a single asset"""
+
     
-    # Prepare data strings
+
     price_data = price_df.to_string(index=False)
     news_headlines = "\n".join([f"- {row['title']} ({row['date']})" for _, row in news_df.iterrows()])
     
@@ -189,7 +187,7 @@ Rules:
         if not parsed:
             raise ValueError("Failed to parse JSON response")
         
-        # Validate structure
+
         if "trend_signal" not in parsed or parsed["trend_signal"] not in ["Bullish", "Bearish", "Neutral"]:
             raise ValueError(f"Invalid trend_signal: {parsed.get('trend_signal')}")
         if "key_levels" not in parsed or "support" not in parsed["key_levels"] or "resistance" not in parsed["key_levels"]:
@@ -208,7 +206,7 @@ Rules:
         return None
 
 def save_analysis(asset_id, analysis):
-    """Save analysis to database"""
+
     engine = DBManager.get_engine()
     
     insert_query = text("""
@@ -233,7 +231,7 @@ def save_analysis(asset_id, analysis):
         })
 
 def is_trading_day():
-    """Check if today is a trading day (Mon-Fri, not weekend)"""
+
     from datetime import datetime
     now = datetime.now()
     # 0=Monday, 4=Friday, 5=Saturday, 6=Sunday
@@ -242,25 +240,25 @@ def is_trading_day():
 def main():
     log.info("Starting asset analysis generation...")
     
-    # Check if it's a trading day
+
     trading_day = is_trading_day()
     if trading_day:
         log.info("Trading day detected - analyzing all assets")
     else:
         log.info("Weekend/Holiday detected - analyzing CRYPTO only")
     
-    # Get macro summary
+
     log.info("Fetching macro summary...")
     macro_summary = get_macro_summary()
     if not macro_summary:
         log.error("No macro summary found. Run generate_macro_summary.py first.")
         return
     
-    # Get all assets
+
     log.info("Fetching assets...")
     assets_df = get_all_assets()
     
-    # Filter assets based on trading day
+
     if not trading_day:
         # Weekend/Holiday: Only analyze CRYPTO
         assets_df = assets_df[assets_df['asset_class'] == 'CRYPTO']
@@ -279,13 +277,13 @@ def main():
         
         log.info(f"[{idx+1}/{total_assets}] Analyzing {symbol} ({asset_class})...")
         
-        # Check if analysis already exists for today
+
         if check_existing_analysis(asset_id):
             log.info(f"{symbol}: Analysis already exists for today, skipping")
             success_count += 1  # Count as success since we have the data
             continue
         
-        # Get data
+
         price_df, news_df = get_asset_data(symbol, asset_class)
         
         if price_df.empty:
@@ -293,7 +291,7 @@ def main():
             failed_assets.append(symbol)
             continue
         
-        # Generate analysis
+
         analysis = generate_asset_analysis(symbol, asset_class, macro_summary, price_df, news_df)
         
         if analysis:

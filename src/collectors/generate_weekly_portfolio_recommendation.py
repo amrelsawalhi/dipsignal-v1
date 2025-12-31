@@ -1,7 +1,4 @@
-"""
-Weekly Portfolio Recommendation Generator
-Generates AI-powered portfolio recommendations for 3 risk profiles using comprehensive market data
-"""
+
 
 import os
 import json
@@ -14,11 +11,11 @@ from google import genai
 log = get_logger("WEEKLY_PORTFOLIO")
 
 def fetch_all_data():
-    """Fetch comprehensive data for portfolio recommendation using database views"""
+
     engine = DBManager.get_engine()
     
     with engine.connect() as conn:
-        # 1. Macro summary
+
         macro_query = text("""
             SELECT summary_text 
             FROM dipsignal.fact_macro_summary 
@@ -28,20 +25,20 @@ def fetch_all_data():
         macro_result = conn.execute(macro_query).fetchone()
         macro_summary = macro_result[0] if macro_result else "No macro data available"
         
-        # 2. Asset analyses with price trends (using view)
+
         asset_query = text("""
             SELECT * FROM dipsignal.vw_latest_asset_analysis
         """)
         assets = conn.execute(asset_query).fetchall()
         
-        # 3. Balanced news (using view)
+
         news_query = text("""
             SELECT title, summary, url, date, related_tickers
             FROM dipsignal.vw_balanced_news_7d
         """)
         news = conn.execute(news_query).fetchall()
         
-        # 4. Fear & Greed Index (Crypto - last 7 days)
+
         fgi_query = text("""
             SELECT date, fgi_value, classification
             FROM dipsignal.fact_sentiment_index
@@ -51,19 +48,19 @@ def fetch_all_data():
         fgi_results = conn.execute(fgi_query).fetchall()
         fgi = fgi_results if fgi_results else []
         
-        # 5. Sector summary (using view)
+
         sector_query = text("""
             SELECT * FROM dipsignal.vw_sector_summary
         """)
         sectors = conn.execute(sector_query).fetchall()
         
-        # 6. Technical indicators (using view)
+
         technical_query = text("""
             SELECT * FROM dipsignal.vw_asset_technical_indicators
         """)
         technicals = conn.execute(technical_query).fetchall()
         
-        # 7. Correlations (using view)
+
         correlation_query = text("""
             SELECT * FROM dipsignal.vw_asset_correlations
         """)
@@ -80,21 +77,21 @@ def fetch_all_data():
     }
 
 def build_prompt(data, risk_profile):
-    """Build comprehensive prompt for AI recommendation"""
+
     
-    # Format macro context
+
     macro_context = f"**Macroeconomic Summary:**\n{data['macro_summary']}\n\n"
     
-    # Format sector overview
+
     sector_overview = "**Sector Overview:**\n"
     for sector in data['sectors']:
         sector_overview += f"- {sector[0]}: {sector[1]} assets ({sector[2]} bullish, {sector[3]} bearish, {sector[4]} neutral)\n"
     sector_overview += "\n"
     
-    # Format asset analyses with price trends and technicals
+
     asset_analyses = "**Detailed Asset Analyses:**\n\n"
     
-    # Create lookup dict for technicals
+
     tech_dict = {t[0]: t for t in data['technicals']}
     
     for asset in data['assets']:
@@ -112,7 +109,7 @@ def build_prompt(data, risk_profile):
         asset_analyses += f"- Analysis: {analysis}\n"
         asset_analyses += f"- Price: ${current_price:.2f}, 7d: {change_7d:.2f}%, 30d: {change_30d:.2f}%\n"
         
-        # Add technical indicators
+
         if symbol in tech_dict:
             t = tech_dict[symbol]
             vol = t[1] if t[1] is not None else 0
@@ -121,18 +118,18 @@ def build_prompt(data, risk_profile):
         
         asset_analyses += "\n"
     
-    # Format correlations
+
     correlation_text = "**Asset Correlations (Top 50 pairs):**\n"
     for corr in data['correlations']:
         correlation_text += f"- {corr[0]}-{corr[1]}: {corr[2]:.2f}\n"
     correlation_text += "\n"
     
-    # Format news
+
     news_text = f"**Recent News (Last 7 Days - {len(data['news'])} articles):**\n\n"
     for article in data['news'][:50]:  # Limit to 50 for prompt
         news_text += f"- **{article[0]}**\n  {article[1]}\n\n"
     
-    # Format market psychology (crypto-specific)
+
     fgi_text = "**Crypto Market Psychology (Fear & Greed Index - Last 7 Days):**\n"
     if data['fgi']:
         for fgi_row in data['fgi']:
@@ -141,7 +138,7 @@ def build_prompt(data, risk_profile):
         fgi_text += "- No FGI data available\n"
     fgi_text += "\n"
     
-    # Build final prompt
+
     prompt = f"""You are a professional portfolio manager. Generate a comprehensive portfolio recommendation for a **{risk_profile}** risk profile.
 
 {macro_context}
@@ -175,6 +172,7 @@ Return ONLY valid JSON in this exact format:
     "top_picks": [
         {{
             "symbol": "AAPL",
+            "name": "Apple Inc.",
             "weight": 10,
             "rationale": "...",
             "sector": "Technology",
@@ -200,16 +198,16 @@ def generate_recommendation(risk_profile):
     """Generate portfolio recommendation for a specific risk profile"""
     log.info(f"Generating {risk_profile} portfolio recommendation...")
     
-    # 1. Fetch data
+
     data = fetch_all_data()
     log.info(f"  - Fetched {len(data['assets'])} assets, {len(data['news'])} news articles")
     
-    # 2. Build prompt
+
     prompt = build_prompt(data, risk_profile)
     prompt_tokens = len(prompt) // 4  # Rough estimate
     log.info(f"  - Prompt size: ~{prompt_tokens:,} tokens")
     
-    # 3. Generate with AI
+
     client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
     
     response = client.models.generate_content(
@@ -217,7 +215,7 @@ def generate_recommendation(risk_profile):
         contents=prompt
     )
     
-    # 4. Parse response
+
     response_text = response.text.strip()
     
     # Handle markdown code blocks
@@ -234,7 +232,7 @@ def generate_recommendation(risk_profile):
     
     recommendation = json.loads(response_text)
     
-    # 5. Add metadata
+
     recommendation['_metadata'] = {
         'token_count': prompt_tokens,
         'data_sources': {

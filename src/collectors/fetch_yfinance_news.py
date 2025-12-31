@@ -12,15 +12,15 @@ from src.core.logger_manager import get_logger
 log = get_logger("YFINANCE_NEWS")
 
 def clean_html(text):
-    """Remove HTML tags from text"""
+
     if not text:
         return ""
-    # Remove HTML tags
+
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text).strip()
 
 def get_equity_symbols():
-    """Fetch all equity symbols from dim_assets"""
+
     engine = DBManager.get_engine()
     query = text("""
         SELECT symbol 
@@ -34,7 +34,7 @@ def get_equity_symbols():
         return [row[0] for row in result]
 
 def fetch_news_for_ticker(symbol, max_articles=5):
-    """Fetch recent news for a single ticker using yfinance"""
+
     try:
         ticker = yf.Ticker(symbol)
         news = ticker.news
@@ -49,21 +49,21 @@ def fetch_news_for_ticker(symbol, max_articles=5):
                 # New yfinance structure: data is nested under 'content'
                 content = article.get('content', {})
                 
-                # Extract data from nested structure
+
                 title = content.get('title', '').strip()
                 description = content.get('description', '')
                 summary = clean_html(description) if description else None
                 
-                # Get URL from canonicalUrl or clickThroughUrl
+
                 canonical_url = content.get('canonicalUrl', {})
                 click_url = content.get('clickThroughUrl', {})
                 url = canonical_url.get('url') or click_url.get('url', '')
                 
-                # Get publisher
+
                 provider = content.get('provider', {})
                 publisher = provider.get('displayName', 'Unknown')
                 
-                # Get publish time from pubDate
+
                 pub_date_str = content.get('pubDate')
                 if pub_date_str:
                     try:
@@ -74,12 +74,12 @@ def fetch_news_for_ticker(symbol, max_articles=5):
                 else:
                     date = datetime.now().date()
                 
-                # Get related tickers from finance metadata or use symbol as fallback
+
                 related_tickers = content.get('finance', {}).get('relatedTickers', [symbol])
                 if not related_tickers:
                     related_tickers = [symbol]
                 
-                # Skip if missing essential data
+
                 if not title or not url:
                     log.warning(f"{symbol}: Skipping article - missing title or URL")
                     continue
@@ -105,7 +105,7 @@ def fetch_news_for_ticker(symbol, max_articles=5):
         return []
 
 def insert_on_conflict_nothing(table, conn, keys, data_iter):
-    """Custom insert method that ignores conflicts on URL"""
+
     data = [dict(zip(keys, row)) for row in data_iter]
     stmt = insert(table.table).values(data).on_conflict_do_nothing(index_elements=['url'])
     result = conn.execute(stmt)
@@ -114,7 +114,7 @@ def insert_on_conflict_nothing(table, conn, keys, data_iter):
 def main():
     log.info("Starting yfinance news collection...")
     
-    # Get all equity symbols
+
     symbols = get_equity_symbols()
     
     if not symbols:
@@ -135,7 +135,7 @@ def main():
         if i < len(symbols):  # Don't sleep after last ticker
             time.sleep(0.5)
     
-    # Insert all articles into database
+
     if all_articles:
         df = pd.DataFrame(all_articles)
         

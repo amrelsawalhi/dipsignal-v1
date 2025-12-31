@@ -1,7 +1,4 @@
-"""
-Generate AI summaries for news articles collected today
-Runs as part of the daily pipeline after news collection
-"""
+
 import os
 import time
 import requests
@@ -19,7 +16,7 @@ load_dotenv()
 log = get_logger("DAILY_NEWS_SUMMARIES")
 
 def fetch_article_content(url):
-    """Scrape article text from URL"""
+
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -27,7 +24,7 @@ def fetch_article_content(url):
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # Extract article body
+
         article_body = soup.find('div', class_='body yf-5ef8bf')
         if article_body:
             paragraphs = article_body.find_all('p')
@@ -42,7 +39,7 @@ def fetch_article_content(url):
 
 
 def scrape_batch(articles):
-    """Scrape multiple articles in parallel"""
+
     scraped = []
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
@@ -71,11 +68,11 @@ def scrape_batch(articles):
 
 
 def generate_batch_summaries(articles):
-    """Generate summaries for multiple articles in one AI call"""
+
     
     client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
     
-    # Build batch prompt
+
     articles_text = ""
     for i, article in enumerate(articles, 1):
         articles_text += f"""
@@ -108,10 +105,10 @@ No extra formatting, just the JSON array.
             contents=prompt
         )
         
-        # Parse JSON response
+
         response_text = response.text.strip()
         
-        # Clean markdown code blocks if present
+
         if response_text.startswith('```'):
             response_text = response_text.split('```')[1]
             if response_text.startswith('json'):
@@ -119,7 +116,7 @@ No extra formatting, just the JSON array.
         
         summaries = json.loads(response_text)
         
-        # Match summaries to articles
+
         results = []
         for i, article in enumerate(articles):
             if i < len(summaries):
@@ -136,7 +133,7 @@ No extra formatting, just the JSON array.
 
 
 def get_todays_articles_without_summaries(engine):
-    """Fetch articles from last 24 hours that don't have summaries"""
+
     query = text("""
         SELECT article_id, url, title 
         FROM dipsignal.fact_news_articles 
@@ -151,7 +148,7 @@ def get_todays_articles_without_summaries(engine):
 
 
 def update_article_summaries(engine, summaries):
-    """Update multiple article summaries in database"""
+
     query = text("""
         UPDATE dipsignal.fact_news_articles 
         SET summary = :summary 
@@ -168,7 +165,7 @@ def main():
     
     engine = DBManager.get_engine()
     
-    # Get today's articles without summaries
+
     articles = get_todays_articles_without_summaries(engine)
     
     if not articles:
@@ -177,7 +174,7 @@ def main():
     
     log.info(f"Found {len(articles)} articles from today without summaries")
     
-    # Process in batches of 5
+
     ai_batch_size = 5
     processed = 0
     success_count = 0
@@ -186,7 +183,7 @@ def main():
     for i in range(0, len(articles), ai_batch_size):
         ai_batch = articles[i:i+ai_batch_size]
         
-        # Step 1: Scrape all articles in parallel
+
         scraped = scrape_batch(ai_batch)
         
         if not scraped:
@@ -194,11 +191,11 @@ def main():
             processed += len(ai_batch)
             continue
         
-        # Step 2: Generate summaries for all scraped articles
+
         summaries = generate_batch_summaries(scraped)
         
         if summaries:
-            # Step 3: Update database
+
             update_article_summaries(engine, summaries)
             success_count += len(summaries)
             log.info(f"[{processed+len(summaries)}/{len(articles)}] OK Batch of {len(summaries)} articles")

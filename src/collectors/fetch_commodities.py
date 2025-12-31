@@ -13,9 +13,9 @@ from src.core.logger_manager import get_logger
 log = get_logger("FETCH_COMMODITIES")
 
 def fetch_commodity_assets(engine):
-    """Fetch specific assets from commodities.json, resolving their IDs from dim_assets."""
+
     
-    # 1. Load the Commodities list
+
     config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'commodities.json')
     try:
         with open(config_path, 'r') as f:
@@ -33,26 +33,26 @@ def fetch_commodity_assets(engine):
         log.warning("Commodities list is empty.")
         return []
 
-    # 2. Query DB for these specific symbols to get their IDs
-    # Filter by asset_class = 'COMMODITY' as well
+
+
     query = text("SELECT asset_id, symbol FROM dipsignal.dim_assets WHERE asset_class = 'COMMODITY' AND symbol IN :symbols")
     
     with engine.connect() as conn:
         return conn.execute(query, {"symbols": tuple(target_symbols)}).fetchall()
 
 def calculate_technicals(df):
-    """Calculate moving averages and other technicals."""
+
     if len(df) < 200:
         return df
         
     df['sma_50'] = df['Close'].rolling(window=50).mean()
     df['sma_200'] = df['Close'].rolling(window=200).mean()
-    # Simple Daily Return
+
     df['daily_return'] = df['Close'].pct_change()
     return df
 
 def fetch_history_with_retries(ticker, period="5y"):
-    """Fetch history with retry logic."""
+
     max_retries = 3
     for attempt in range(max_retries):
         try:
@@ -71,16 +71,16 @@ def fetch_history_with_retries(ticker, period="5y"):
     return None
 
 def fetch_commodity_data(symbol, period="5y"):
-    """Fetch history for a single commodity symbol."""
+
     ticker = yf.Ticker(symbol)
     
-    # 1. Fetch History
+
     hist = fetch_history_with_retries(ticker, period)
     
     if hist is None or hist.empty:
         return None
         
-    # 2. Process Data
+
     hist = hist.reset_index()
     hist['Date'] = pd.to_datetime(hist['Date']).dt.tz_localize(None) 
     
@@ -94,13 +94,13 @@ def fetch_commodity_data(symbol, period="5y"):
     return hist
 
 def is_trading_day():
-    """Check if today is a trading day (Mon-Fri, not weekend)"""
+
     from datetime import datetime
     now = datetime.now()
     return now.weekday() < 5
 
 def main():
-    # Check if it's a trading day
+
     if not is_trading_day():
         log.info("Weekend/Holiday detected - skipping commodities (markets closed)")
         return
@@ -131,7 +131,7 @@ def main():
         records = []
         for _, row in df.iterrows():
             # Construct Technical Metadata
-            # For commodities, we focus on price action and technicals
+
             meta = {
                 "sma_50": row.get('sma_50'),
                 "sma_200": row.get('sma_200'),
@@ -139,7 +139,7 @@ def main():
                 # Using lower() keys or standard? keeping consistent with stocks
                 "volume": row.get('Volume') 
             }
-            # Clean NaNs
+
             meta = {k: (None if pd.isna(v) else v) for k, v in meta.items()}
 
             records.append({
@@ -154,7 +154,7 @@ def main():
                 "dynamic_metadata": meta 
             })
             
-        # Bulk Insert per Asset
+
         if records:
             stmt = insert(fact_table).values(records)
             stmt = stmt.on_conflict_do_nothing(
@@ -165,7 +165,7 @@ def main():
                 result = conn.execute(stmt)
                 log.info(f"Inserted {result.rowcount} rows for {symbol}.")
                 
-        # Be nice to the API
+
         time.sleep(1.0) 
 
 if __name__ == "__main__":

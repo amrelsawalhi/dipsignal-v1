@@ -40,17 +40,17 @@ def main():
     engine = DBManager.get_engine()
     
     try:
-        # Define the table schema in Python explicitly matching the DB
+
         metadata = MetaData()
         table = Table('fact_sentiment_index', metadata,
             autoload_with=engine,
             schema='dipsignal'
         )
         
-        # Convert DF to list of dicts
+
         records = df.to_dict(orient='records')
         
-        # Build the insert statement with on_conflict_do_nothing
+
         stmt = insert(table).values(records)
         stmt = stmt.on_conflict_do_nothing(index_elements=['date'])
         

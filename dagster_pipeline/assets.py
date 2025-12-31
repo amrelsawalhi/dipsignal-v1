@@ -19,6 +19,7 @@ from src.collectors.fetch_yfinance_news import main as fetch_yfinance_news_main
 from src.collectors.generate_macro_summary import main as generate_macro_summary_main
 from src.collectors.generate_asset_analysis import main as generate_asset_analysis_main
 from src.collectors.generate_daily_news_summaries import main as generate_daily_news_summaries_main
+from src.collectors.generate_top_5_news import main as generate_top_5_news_main
 from src.collectors.generate_weekly_portfolio_recommendation import main as generate_weekly_portfolio_main
 
 
@@ -171,6 +172,24 @@ def daily_news_summaries(context: AssetExecutionContext) -> Output[None]:
             "model": MetadataValue.text("gemma-3-12b-it"),
             "batch_size": MetadataValue.int(5),
             "description": MetadataValue.text("AI summaries for new articles"),
+        }
+    )
+
+
+@asset(
+    group_name="ai_analysis",
+    deps=["daily_news_summaries"]  # Wait for news summaries to be ready
+)
+def top_5_news(context: AssetExecutionContext) -> Output[None]:
+    """Generate top 5 critical news from CIO perspective"""
+    context.log.info("Generating top 5 critical news...")
+    generate_top_5_news_main()
+    
+    return Output(
+        None,
+        metadata={
+            "model": MetadataValue.text("gemini-2.5-flash-lite"),
+            "description": MetadataValue.text("Top 5 news ranking from Global Macro CIO perspective"),
         }
     )
 

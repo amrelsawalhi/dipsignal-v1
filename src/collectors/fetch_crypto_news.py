@@ -13,11 +13,12 @@ import json
 log = get_logger("NEWS")
 
 
-# Load RSS Feed URLs from config
+
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), '../config/feeds.json')
 try:
     with open(CONFIG_PATH, 'r') as f:
-        # Check if file is empty before loading, or catch JSONDecodeError
+
+
         content = f.read().strip()
         if not content:
             FEEDS = {}
@@ -42,12 +43,12 @@ def fetch_feed(source, url):
     parsed = feedparser.parse(url)
     articles = []
     for entry in parsed.entries:
-        # Safely get title and summary, handling potential missing keys
+
         title = entry.get("title", "").strip()
         summary = clean_html(entry.get("summary", entry.get("description", "")))
         link = entry.get("link", "")
         
-        # Only append if essential data is present
+
         if title and link:
             articles.append({
                 "date": parse_date(entry),
@@ -55,7 +56,7 @@ def fetch_feed(source, url):
                 "title": title,
                 "summary": summary,
                 "url": link,
-                "related_tickers": json.dumps(["CRYPTO"]) # Tag all crypto news
+                "related_tickers": json.dumps(["CRYPTO"])
             })
         else:
             log.warning(f"Skipping entry from {source} due to missing title or link: {entry.get('link', 'N/A')}")
@@ -75,9 +76,7 @@ def fetch_all_news():
     return df
 
 def insert_on_conflict_nothing(table, conn, keys, data_iter):
-    """
-    Custom insertion method for Postgres to handle unique constraint conflicts.
-    """
+
     data = [dict(zip(keys, row)) for row in data_iter]
     stmt = insert(table.table).values(data).on_conflict_do_nothing(index_elements=['url'])
     result = conn.execute(stmt)
@@ -86,7 +85,7 @@ def insert_on_conflict_nothing(table, conn, keys, data_iter):
 def main():
     df_news = fetch_all_news()
     
-    # Use direct engine access for custom insertion method
+
     engine = DBManager.get_engine()
     
     try:

@@ -137,7 +137,7 @@ def calculate_indicators(df: pd.DataFrame, market_cap: float = None) -> pd.DataF
         'sma_200': sma_200,        
         'macd': macd['MACD_12_26_9'].round(2),
         'pct_change': df['close'].pct_change().round(4),
-        'market_cap': market_cap  # Add market cap to metadata
+        'market_cap': market_cap
     })
     
     # Fill NaN with None so JSON handles it as null
@@ -199,7 +199,7 @@ def main():
         
         log.info(f"Processing {symbol}...")
         
-        # Fetch market cap from CoinGecko
+
         market_cap = fetch_market_cap_coingecko(coingecko_id, symbol)
         if market_cap:
             log.info(f"{symbol} market cap: ${market_cap:,.0f}")
@@ -207,7 +207,7 @@ def main():
         # Delay to avoid CoinGecko rate limits (free tier: ~10 calls/min)
         time.sleep(6)
         
-        # Daily incremental fetch (last 200 days)
+
         df = fetch_ohlcv_binance(symbol=binance_pair, interval=interval, limit=200)
         
         if df.empty:
@@ -216,12 +216,11 @@ def main():
 
         df = calculate_indicators(df, market_cap=market_cap)
         
-        # Get asset_id
+
         asset_id = get_asset_id(symbol, engine)
         df['asset_id'] = asset_id
         df['interval'] = interval
         
-        # Rename columns to match schema
         df = df.rename(columns={
             'open': 'price_open',
             'high': 'price_high',
@@ -229,20 +228,20 @@ def main():
             'close': 'price_close'
         })
         
-        # Select columns matching schema
+
         target_cols = ['asset_id', 'timestamp', 'interval', 'price_open', 'price_high', 'price_low', 'price_close', 'volume', 'dynamic_metadata']
         df_final = df[target_cols]
 
         try:
             # Direct SQLAlchemy approach matches DB types better than pandas.to_sql
             metadata = MetaData()
-            # Reflect the table to get exact column types (including JSONB)
+
             table = Table('fact_asset_prices', metadata, autoload_with=engine, schema='dipsignal')
             
-            # Convert DF to list of dicts
+
             records = df_final.to_dict(orient='records')
             
-            # Build the insert statement with on_conflict_do_nothing
+
             stmt = insert(table).values(records)
             stmt = stmt.on_conflict_do_nothing(
                 index_elements=['asset_id', 'timestamp', 'interval']

@@ -12,7 +12,7 @@ from src.core.logger_manager import get_logger
 load_dotenv()
 log = get_logger("MACRO_SUMMARY")
 
-# Configure Gemini
+
 api_key = os.getenv("GEMINI_API_KEY")
 if api_key:
     client = genai.Client(api_key=api_key)
@@ -21,7 +21,7 @@ else:
     exit(1)
 
 def get_macro_data(days=365):
-    """Fetch the last N days of macro data"""
+
     engine = DBManager.get_engine()
     
     query = text("""
@@ -39,7 +39,7 @@ def get_macro_data(days=365):
         return df.sort_values('date', ascending=True)  # Sort chronologically for AI
 
 def check_existing_summary(date):
-    """Check if a summary already exists for today"""
+
     engine = DBManager.get_engine()
     
     query = text("""
@@ -53,23 +53,23 @@ def check_existing_summary(date):
         return result[0] if result else None
 
 def clean_ai_response(text):
-    """Remove unwanted artifacts from AI response"""
+
     if not text:
         return text
     
-    # Remove lines starting with @[
+
     lines = text.split('\n')
     cleaned_lines = [line for line in lines if not line.strip().startswith('@[')]
     
     return '\n'.join(cleaned_lines).strip()
 
 def generate_macro_summary(macro_df):
-    """Use Gemini to generate both long and short macro summaries"""
+
     
-    # Prepare the data summary
+
     data_summary = macro_df.to_string(index=False)
     
-    # Generate LONG summary (for AI analysis)
+
     long_prompt = f"""
 You are a Senior Macroeconomic Analyst. Analyze the following 365 days of macro data and provide a comprehensive market summary.
 
@@ -97,10 +97,10 @@ Format your response as a cohesive narrative. Be specific with numbers and dates
         log.error(f"Failed to generate long summary: {e}")
         return None, None
     
-    # Wait to avoid rate limit
+
     time.sleep(2)
     
-    # Generate SHORT summary (for dashboard display)
+
     short_prompt = f"""
 Condense the following comprehensive macro analysis into a 100-150 word executive summary suitable for a dashboard.
 
@@ -129,7 +129,7 @@ Be direct and actionable. No fluff.
     return summary_long, summary_short
 
 def save_macro_summary(summary_long, summary_short, period_start, period_end):
-    """Save both macro summaries to the database"""
+
     engine = DBManager.get_engine()
     
     insert_query = text("""
@@ -158,7 +158,7 @@ def is_trading_day():
 def main():
     log.info("Starting macro summary generation...")
     
-    # Check if it's a trading day
+
     if not is_trading_day():
         log.info("Weekend/Holiday detected - skipping macro summary (markets closed)")
         return  # Return normally instead of exit
@@ -167,14 +167,14 @@ def main():
     
     today = datetime.now().date()
     
-    # Check if summary already exists
+
     existing = check_existing_summary(today)
     if existing:
         log.info(f"Macro summary already exists for {today}")
         print(f"\n{'='*80}\nEXISTING MACRO SUMMARY:\n{'='*80}\n{existing}\n{'='*80}\n")
         return
     
-    # Fetch macro data
+
     log.info("Fetching 365 days of macro data...")
     macro_df = get_macro_data(days=365)
     
@@ -187,14 +187,14 @@ def main():
     
     log.info(f"Analyzing period: {period_start} to {period_end}")
     
-    # Generate both summaries
+
     summary_long, summary_short = generate_macro_summary(macro_df)
     
     if not summary_long or not summary_short:
         log.error("Failed to generate summaries")
         return
     
-    # Save to database
+
     rows_inserted = save_macro_summary(summary_long, summary_short, period_start, period_end)
     
     if rows_inserted > 0:

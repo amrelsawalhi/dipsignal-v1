@@ -1,7 +1,4 @@
-"""
-Backfill missing news summaries using AI - OPTIMIZED VERSION
-Processes articles in batches with parallel scraping
-"""
+
 import os
 import time
 import requests
@@ -18,7 +15,7 @@ load_dotenv()
 log = get_logger("BACKFILL_SUMMARIES")
 
 def fetch_article_content(url):
-    """Scrape article text from URL"""
+
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
@@ -26,23 +23,22 @@ def fetch_article_content(url):
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # Extract article body (Yahoo Finance specific)
         article_body = soup.find('div', class_='body yf-5ef8bf')
         if article_body:
             paragraphs = article_body.find_all('p')
             article_text = '\n'.join([p.get_text() for p in paragraphs])
         else:
-            # Fallback: get all paragraphs
+
             paragraphs = soup.find_all('p')
             article_text = '\n'.join([p.get_text() for p in paragraphs])
         
-        return article_text[:3000]  # Limit to 3000 chars for batching
+        return article_text[:3000]
     except Exception as e:
         return None
 
 
 def scrape_batch(articles):
-    """Scrape multiple articles in parallel"""
+
     scraped = []
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
@@ -71,7 +67,7 @@ def scrape_batch(articles):
 
 
 def generate_batch_summaries(articles):
-    """Generate summaries for multiple articles in one AI call"""
+
     
     client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
     
@@ -136,7 +132,7 @@ No extra formatting, just the JSON array.
 
 
 def get_articles_without_summaries(engine, batch_size=100):
-    """Fetch articles with null summaries"""
+
     query = text("""
         SELECT article_id, url, title 
         FROM dipsignal.fact_news_articles 
@@ -151,7 +147,7 @@ def get_articles_without_summaries(engine, batch_size=100):
 
 
 def update_article_summaries(engine, summaries):
-    """Update multiple article summaries in database"""
+
     query = text("""
         UPDATE dipsignal.fact_news_articles 
         SET summary = :summary 
@@ -203,7 +199,7 @@ def main():
         for i in range(0, len(articles), ai_batch_size):
             ai_batch = articles[i:i+ai_batch_size]
             
-            # Step 1: Scrape all articles in parallel
+
             scraped = scrape_batch(ai_batch)
             
             if not scraped:
@@ -211,11 +207,11 @@ def main():
                 processed += len(ai_batch)
                 continue
             
-            # Step 2: Generate summaries for all scraped articles
+
             summaries = generate_batch_summaries(scraped)
             
             if summaries:
-                # Step 3: Update database
+
                 update_article_summaries(engine, summaries)
                 success_count += len(summaries)
                 log.info(f"[{processed+len(summaries)}/{total_count}] OK Batch of {len(summaries)} articles")

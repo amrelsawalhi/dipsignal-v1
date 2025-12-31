@@ -35,22 +35,18 @@ class DBManager:
 
     @classmethod
     def write_df(cls, df, table_name, schema="dipsignal"):
-        """
-        UPGRADED: Uses Polars for high-speed writes if a Polars DF is passed.
-        Falls back to Pandas for compatibility with your existing scripts.
-        """
         engine = cls.get_engine()
         
-        # If it's a Polars DataFrame, use the high-speed engine
+
         if isinstance(df, pl.DataFrame):
             df.write_database(
                 table_name=f"{schema}.{table_name}",
                 connection=engine,
                 if_table_exists="append",
-                engine="sqlalchemy" # Use 'adbc' later if you install it for even more speed
+                engine="sqlalchemy"
             )
         else:
-            # Fallback for your current Pandas scripts
+
             df.to_sql(
                 name=table_name,
                 con=engine,
@@ -58,7 +54,7 @@ class DBManager:
                 if_exists='append',
                 index=False,
                 method='multi',
-                chunksize=2000 # Increased chunksize for Postgres 18 efficiency
+                chunksize=2000
             )
         print(f"✅ Data pushed to {schema}.{table_name}")
 

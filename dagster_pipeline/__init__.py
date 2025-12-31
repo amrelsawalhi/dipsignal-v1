@@ -11,6 +11,7 @@ from .assets import (
     crypto_news,
     stock_news,
     daily_news_summaries,
+    top_5_news,
     macro_summary,
     asset_analysis,
     weekly_portfolio_recommendation,
@@ -29,6 +30,7 @@ defs = Definitions(
         crypto_news,
         stock_news,
         daily_news_summaries,  # NEW: AI summaries for today's news
+        top_5_news,            # NEW: Top 5 critical news from CIO perspective
         # Phase 3: AI Analysis
         macro_summary,
         asset_analysis,

@@ -30,13 +30,27 @@ The pipeline follows a **Source → Transform → Load → Analyze** architectur
 │ PHASE 2: AI Analysis (Sequential Execution with Rate Limiting)          │
 ├─────────────────────────────────────────────────────────────────────────┤
 │ Gemini AI (gemma-3-27b-it)                                              │
+<<<<<<< HEAD
 │   → Macro market summary (365-day analysis)                             │
 │   → Daily news summaries (batch processing, 5 articles at a time)       │
 │   → Asset analysis (61 assets × ~60 min due to 1/min rate limit)        │
+=======
+│   → Macro market summary (365-day analysis)                            │
+│   → Asset analysis (61 assets × ~60 min due to 1/min rate limit)       │
+>>>>>>> 63afba1 (added top_5_news collector)
+│                                                                         │
+│ Gemini AI (gemma-3-12b-it)                                              │
+│   → Daily news summaries (batch processing, 5 articles at a time)      │
 │                                                                         │
 │ Gemini AI (gemini-2.5-flash)                                            │
 │   → Weekly portfolio recommendations (3 risk profiles)                  │
 │   → Correlation analysis and diversification scoring                    │
+<<<<<<< HEAD
+=======
+│                                                                         │
+│ Gemini AI (gemini-2.5-flash-lite)                                       │
+│   → Top 5 critical news selection                     │
+>>>>>>> 63afba1 (added top_5_news collector)
 └─────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
@@ -346,7 +360,7 @@ fgi_data             ────┤
 crypto_news          ────┤
                          ├──→ macro_summary
 macro_data           ────┤         ↓
-  ↓ (3s delay)           │   daily_news_summaries
+  ↓ (3s delay)           │   daily_news_summaries ──→ top_5_news
 stock_data           ────┤         ↓
   ↓ (3s delay)           │   asset_analysis
 commodity_data       ────┤
@@ -618,6 +632,8 @@ Glued_Stack_V1/
 │   │   ├── fetch_binance.py   # Crypto OHLCV + market cap
 │   │   ├── fetch_stocks.py    # Stock data (49 assets)
 │   │   ├── generate_asset_analysis.py  # AI technical analysis
+│   │   ├── generate_daily_news_summaries.py # Daily AI news summaries
+│   │   ├── generate_top_5_news.py      # CIO-style top 5 news selection
 │   │   └── generate_weekly_portfolio_recommendation.py
 │   ├── config/                # Asset configuration JSONs
 │   │   ├── crypto_assets.json # 6 crypto symbols + CoinGecko IDs
