@@ -23,7 +23,7 @@ The pipeline follows a **Source → Transform → Load → Analyze** architectur
 │ CoinGecko API        → Real-time market cap data                        │
 │ RSS Feeds            → Crypto news (CoinDesk, Cointelegraph, Decrypt)   │
 │ Yahoo Finance        → Stock news (5 articles per stock)                │
-│ CNN Fear & Greed API → Market sentiment index                           │
+│ Crypto Fear & Greed API → Market sentiment index                        │
 └─────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
