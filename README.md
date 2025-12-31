@@ -15,46 +15,46 @@ The pipeline follows a **Source → Transform → Load → Analyze** architectur
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ PHASE 1: Data Collection (Parallel Execution)                          │
+│ PHASE 1: Data Collection (Parallel Execution)                           │
 ├─────────────────────────────────────────────────────────────────────────┤
-│ Binance API          → 6 crypto assets (BTC, ETH, SOL, XRP, ADA, BNB)  │
-│ yFinance API         → 49 stocks + 6 commodities (Gold, Oil, etc.)     │
-│ FRED API             → 5 macro indicators (VIX, 10Y Treasury, etc.)    │
-│ CoinGecko API        → Real-time market cap data                       │
-│ RSS Feeds            → Crypto news (CoinDesk, Cointelegraph, Decrypt)  │
-│ Yahoo Finance        → Stock news (5 articles per stock)               │
-│ CNN Fear & Greed API → Market sentiment index                          │
+│ Binance API          → 6 crypto assets (BTC, ETH, SOL, XRP, ADA, BNB)   │
+│ yFinance API         → 49 stocks + 6 commodities (Gold, Oil, etc.)      │
+│ FRED API             → 5 macro indicators (VIX, 10Y Treasury, etc.)     │
+│ CoinGecko API        → Real-time market cap data                        │
+│ RSS Feeds            → Crypto news (CoinDesk, Cointelegraph, Decrypt)   │
+│ Yahoo Finance        → Stock news (5 articles per stock)                │
+│ CNN Fear & Greed API → Market sentiment index                           │
 └─────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ PHASE 2: AI Analysis (Sequential Execution with Rate Limiting)         │
+│ PHASE 2: AI Analysis (Sequential Execution with Rate Limiting)          │
 ├─────────────────────────────────────────────────────────────────────────┤
 │ Gemini AI (gemma-3-27b-it)                                              │
-│   → Macro market summary (365-day analysis)                            │
-│   → Daily news summaries (batch processing, 5 articles at a time)      │
-│   → Asset analysis (61 assets × ~60 min due to 1/min rate limit)       │
+│   → Macro market summary (365-day analysis)                             │
+│   → Daily news summaries (batch processing, 5 articles at a time)       │
+│   → Asset analysis (61 assets × ~60 min due to 1/min rate limit)        │
 │                                                                         │
 │ Gemini AI (gemini-2.5-flash)                                            │
 │   → Weekly portfolio recommendations (3 risk profiles)                  │
-│   → Correlation analysis and diversification scoring                   │
+│   → Correlation analysis and diversification scoring                    │
 └─────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ STORAGE: PostgreSQL Database (dipsignal schema)                        │
-│   → Star Schema with 2 dimensions, 7 fact tables                       │
-│   → Technical indicators stored in JSONB (RSI, MACD, SMA_20/50/200)    │
-│   → 6 pre-built analytical views for dashboard queries                 │
+│ STORAGE: PostgreSQL Database (dipsignal schema)                         │
+│   → Star Schema with 2 dimensions, 7 fact tables                        │
+│   → Technical indicators stored in JSONB (RSI, MACD, SMA_20/50/200)     │
+│   → 6 pre-built analytical views for dashboard queries                  │
 └─────────────────────────────────────────────────────────────────────────┘
                                     ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ UI: Streamlit Admin Panel (7 pages)                                    │
-│   → System Health Dashboard                                            │
-│   → Dagster Pipeline Monitor (Dynamic Graph Visualization)             │
-│   → Data Quality Metrics                                               │
-│   → Database Explorer                                                  │
-│   → Manual Asset Triggers                                              │
-│   → Asset Management (CRUD operations)                                 │
-│   → Configuration Management                                           │
+│ UI: Streamlit Admin Panel (7 pages)                                     │
+│   → System Health Dashboard                                             │
+│   → Dagster Pipeline Monitor (Dynamic Graph Visualization)              │
+│   → Data Quality Metrics                                                │
+│   → Database Explorer                                                   │
+│   → Manual Asset Triggers                                               │
+│   → Asset Management (CRUD operations)                                  │
+│   → Configuration Management                                            │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
